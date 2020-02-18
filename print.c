@@ -111,20 +111,143 @@ int ft_search_length_dop(char *str, int len)
     }
     return (0);
 }
-
-char *ft_formatting(int length, char str, va_list ap, int len)
+int ft_len_num(int n)
 {
-    signed char hh;
-    short int h;
-    long int l;                     //нужно узнат есть ли в дальнейшем разница при преобразованиях 
-    long long int ll;
-    int x;
+    int i;
 
-    if (lenghth == 0)
+    i = 0;
+    while ( n != 0)
     {
-
+        n = n / 10;
+        i++;
     }
+    return(i);
+}
+int ft_precision(char *str, int x)
+{
+    int precision;
+    char *s;
+    int len_x;
 
+    if ((s = ft_strchr(str, '.')) != NULL)   
+    {
+        precision = ft_atoi(&str[s - str + 1]);  //можно проверить на отрицательность 
+        printf("preciion = %d\n", precision);
+        len_x = ft_len_num(x); // чтобы понять что нам нужно добавлять нули мы можем записать в число количество нулей которое нам нужно добавить и вернуть его же если нужно 
+        if (len_x >= precision)
+            return (0);       
+        else
+            return (precision - len_x);
+    }
+    return (0);
+
+}
+int ft_flags_help(char c)
+{
+    if (c == '0')
+        return (2);
+    else if (c == '-')
+        return (3);
+    else if (c == ' ')
+        return (4);
+    else
+        return (5);
+}
+
+int ft_flags(char *str)
+{
+    int x;
+    int i;
+
+    i = 0;
+    x = 0;
+    if (str[i] == '0' || str[i] == '-' || str[i] == ' '
+        || str[i] == '+')
+    {
+        x = ft_flags_help(str[i]);
+        i++;
+        if (str[i] == '0' || str[i] == '-' || str[i] == ' '   //если будет больше флагов, то заменим на while
+        || str[i] == '+')
+            x = x * 10 + ft_flags_help(str[i]);
+    }
+    printf("flags - %d\n", x);
+    return (x);
+}
+
+int ft_width(char *str, int flags, int x)
+{
+    int num_of_flags;
+    int y;
+    int len_x;
+
+    num_of_flags = 0;
+    y = 0;
+    if (flags > 10)
+        num_of_flags = 2;
+    else if (flags > 0 && flags < 10)
+        num_of_flags = 1;
+    printf("%c", str[num_of_flags]);
+    if (str[num_of_flags] >= '0' && str[num_of_flags] <= '9')
+    {
+        y = ft_atoi(&str[num_of_flags]);
+        len_x = ft_len_num(x);
+        if (len_x < y)
+            return (y - len_x);
+    }
+    return (0);
+}
+
+void ft_d(int x, int len, char *str)
+{
+    int number_of_zeros;
+    int number_of_spaces;
+    int flags; //1 - # 2 -0 3 - '-' 4 - ' ' 5 - '+'
+
+
+    number_of_zeros = ft_precision(str, x);
+    flags = ft_flags(&str[1]);
+    number_of_spaces = ft_width(&str[1], flags, x);
+
+    printf("number_of_spaces - %d\n", number_of_spaces);              //для реализации точности можно сделать поиск в str точки, если точка есть то берем число после точки
+//    printf("size - %ld\n", sizeof(x));   // реализуем точность с помощью поиска в нашей строке . и запищем местоположение точки в нашей стрчке после будем работать с тем что до этого местоположения те там должны стять ширина или флаг
+}
+
+void ft_char(signed char x, int len, char *str)
+{
+    printf("hhd - %hhd\n", x);
+    printf("size - %ld\n", sizeof(x));
+}
+
+void ft_short_int(short int x, int len, char *str)
+{
+    printf("hd - %hd\n", x);
+    printf("size - %ld\n", sizeof(x));
+}
+
+void ft_long_long(long long int x, int len, char *str)
+{
+    printf("lld - %lld\n", x);
+    printf("size - %ld\n", sizeof(x));
+}
+
+void ft_long(long int x, int len, char *str)
+{
+    printf("ld - %ld\n", x);
+    printf("size - %ld\n", sizeof(x));
+}
+
+void ft_formatting(int length, char *str, va_list ap, int len) // использую тип char* потому что хочу перевести в дальнейшем в строчку, чтобы не было проблем с размером возвращаемых данных, но можно использовать void*
+{                   
+    if (length== 0) //d
+        ft_d(va_arg(ap, int), len, str);//функция преобразования
+    else if (length == 1) //hh
+        ft_char((signed char)va_arg(ap, int), len, str); // функция преобразования
+    else if (length == 2) //h
+        ft_short_int((short int)va_arg(ap, int), len, str);
+    else if (length == 3) //ll
+        ft_long_long(va_arg(ap, long long int), len, str);
+    else if (length == 4) //l
+        ft_long(va_arg(ap, long int), len, str);
 
 }
 
@@ -134,17 +257,17 @@ void ft_int(const char * format, char *str, va_list ap) // можно сдела
     int x;
     int length;
     int len;
-    char *s;
+//    char *s;
 
     //реализовать функцию, которая поможет узнать lenght
     len = (int)ft_strlen(str) - 1;
     length = ft_search_length_dop(str, len);
     //найдя длину мы посылаем в следующую функцию где преобразовываем под эту длину и делаем преобразования, сюда возвращаем то, что получилось, записанное в строчку
-    printf("%d\n", length);
-    printf("%s", str);
+    //printf("%d\n", length);
+    //printf("%s", str);
     //можно отформатировать строчку, чтобы убрать лишнее
     //formatting_str(&str, length, len);   сделать это в следующей функции то, о чем написанно выше и плюс проверка на валидность того, что написанно 
-    s = ft_formatting(length, str, ap, len); // cделать две функции в одну отправляем signed в другую unsigned, если на конце стоит U
+    ft_formatting(length, str, ap, len); // cделать две функции в одну отправляем signed в другую unsigned, если на конце стоит U
      //далее нам нужно распарсить str, чтобы узнать флаги и применить их 
 }
 void ft_main(const char * format, int start, int finish, va_list ap) //изменить то, что возвращает функция
@@ -210,6 +333,6 @@ int ft_printf(const char * restrict format, ...) //убрать ft_
 
 int main()
 {
-    ft_printf("hello how are you %-.5lhd" , 365);
+    ft_printf("%-+10.d" , 365);
     return (0);
 }
