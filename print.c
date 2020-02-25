@@ -116,6 +116,13 @@ int ft_len_num(int n)
     int i;
 
     i = 0;
+    if (n == 0)
+        return (1);
+    if (n < 0)
+    {
+        i++;
+        n *= -1;
+    }
     while ( n != 0)
     {
         n = n / 10;
@@ -123,6 +130,7 @@ int ft_len_num(int n)
     }
     return(i);
 }
+
 int ft_precision(char *str, int x)
 {
     int precision;
@@ -132,8 +140,10 @@ int ft_precision(char *str, int x)
     if ((s = ft_strchr(str, '.')) != NULL)   
     {
         precision = ft_atoi(&str[s - str + 1]);  //можно проверить на отрицательность 
-        printf("preciion = %d\n", precision);
+       // printf("preciion = %d\n", precision);
         len_x = ft_len_num(x); // чтобы понять что нам нужно добавлять нули мы можем записать в число количество нулей которое нам нужно добавить и вернуть его же если нужно 
+        if (x < 0)
+            len_x--;
         if (len_x >= precision)
             return (0);       
         else
@@ -170,11 +180,11 @@ int ft_flags(char *str)
         || str[i] == '+')
             x = x * 10 + ft_flags_help(str[i]);
     }
-    printf("flags - %d\n", x);
+    //printf("flags - %d\n", x);
     return (x);
 }
 
-int ft_width(char *str, int flags, int x)
+int ft_width(char *str, int flags, int x, int n_of_z)
 {
     int num_of_flags;
     int y;
@@ -186,16 +196,81 @@ int ft_width(char *str, int flags, int x)
         num_of_flags = 2;
     else if (flags > 0 && flags < 10)
         num_of_flags = 1;
-    printf("%c", str[num_of_flags]);
+    //printf("%c", str[num_of_flags]);
     if (str[num_of_flags] >= '0' && str[num_of_flags] <= '9')
     {
         y = ft_atoi(&str[num_of_flags]);
-        len_x = ft_len_num(x);
+        len_x = ft_len_num(x) + n_of_z;
         if (len_x < y)
             return (y - len_x);
     }
     return (0);
 }
+void ft_printf_d_help(int x, int number_of_zeros, int number_of_spaces, int flags)
+{
+    int i;
+
+    i = 0;
+    if (flags == 3)
+    {
+        if (x < 0)
+        {
+            write(1, "-", 1);
+            x *= -1;
+        }
+        while (i != number_of_zeros)
+        {
+            write(1, "0", 1);
+            i++;
+        }
+        ft_putnbr(x);
+        i = 0; 
+        while (i != number_of_spaces)
+        {
+            write(1, " ", 1);
+            i++;
+        }
+    }
+    else 
+    {
+        while (i != number_of_spaces)
+        {
+            write(1, " ", 1);
+            i++;
+        }
+        i = 0;
+        if (x > 0 && flags == 5)
+            write(1, "+", 1);
+        else if (x < 0)
+        {
+            write(1, "-", 1);
+            x *= -1;
+        }
+        while (i != number_of_zeros)
+        {
+            write(1, "0", 1);
+            i++;
+        }
+        ft_putnbr(x);
+    }
+}
+
+void ft_printf_d(int x, int number_of_zeros, int number_of_spaces, int flags) //ситуация когда флаг один 
+{
+    if (flags == 2 && number_of_zeros == 0 && number_of_spaces > 0) 
+    {
+        number_of_zeros = number_of_spaces;
+        number_of_spaces = 0;
+    }
+    //флаг 3 можно учитывать при печате если флаг равен 3 и есть ширина то печатаем ирину справа
+    else if (flags == 4 && x >= 0 && number_of_spaces == 0)
+        number_of_spaces = 1;
+    else if (flags == 5 && x >= 0 && number_of_spaces > 0)
+        number_of_spaces -= 1;
+    ft_printf_d_help(x, number_of_zeros, number_of_spaces, flags);
+
+}
+
 
 void ft_d(int x, int len, char *str)
 {
@@ -206,9 +281,11 @@ void ft_d(int x, int len, char *str)
 
     number_of_zeros = ft_precision(str, x);
     flags = ft_flags(&str[1]);
-    number_of_spaces = ft_width(&str[1], flags, x);
+    number_of_spaces = ft_width(&str[1], flags, x, number_of_zeros);
+    ft_printf_d(x, number_of_zeros, number_of_spaces, flags); //функция с оодним флагом, нужно создать функцию с двумя флагами
 
-    printf("number_of_spaces - %d\n", number_of_spaces);              //для реализации точности можно сделать поиск в str точки, если точка есть то берем число после точки
+    //printf(" number_of_zeros - %d\n", number_of_zeros);              //для реализации точности можно сделать поиск в str точки, если точка есть то берем число после точки
+    //printf(" number_of_spaces - %d\n", number_of_spaces); 
 //    printf("size - %ld\n", sizeof(x));   // реализуем точность с помощью поиска в нашей строке . и запищем местоположение точки в нашей стрчке после будем работать с тем что до этого местоположения те там должны стять ширина или флаг
 }
 
@@ -238,7 +315,7 @@ void ft_long(long int x, int len, char *str)
 
 void ft_formatting(int length, char *str, va_list ap, int len) // использую тип char* потому что хочу перевести в дальнейшем в строчку, чтобы не было проблем с размером возвращаемых данных, но можно использовать void*
 {                   
-    if (length== 0) //d
+    if (length == 0) //d
         ft_d(va_arg(ap, int), len, str);//функция преобразования
     else if (length == 1) //hh
         ft_char((signed char)va_arg(ap, int), len, str); // функция преобразования
@@ -333,6 +410,8 @@ int ft_printf(const char * restrict format, ...) //убрать ft_
 
 int main()
 {
-    ft_printf("%-+10.d" , 365);
+    ft_printf("%0121d" , -5);
+    printf("\n");
+    printf("%0121d\n" , -5); 
     return (0);
 }
