@@ -206,73 +206,171 @@ int ft_width(char *str, int flags, int x, int n_of_z)
     }
     return (0);
 }
-void ft_printf_d_help(int x, int number_of_zeros, int number_of_spaces, int flags)
+
+void ft_printf_d_help_3(int x, int number_of_zeros, int number_of_spaces)
 {
     int i;
 
     i = 0;
-    if (flags == 3)
+    if (x < 0)
     {
-        if (x < 0)
-        {
-            write(1, "-", 1);
-            x *= -1;
-        }
-        while (i != number_of_zeros)
-        {
-            write(1, "0", 1);
-            i++;
-        }
-        ft_putnbr(x);
-        i = 0; 
-        while (i != number_of_spaces)
-        {
-            write(1, " ", 1);
-            i++;
-        }
+        write(1, "-", 1);
+        x *= -1;
     }
-    else 
+    while (i != number_of_zeros)
     {
-        while (i != number_of_spaces)
-        {
-            write(1, " ", 1);
-            i++;
-        }
-        i = 0;
-        if (x > 0 && flags == 5)
-            write(1, "+", 1);
-        else if (x < 0)
-        {
-            write(1, "-", 1);
-            x *= -1;
-        }
-        while (i != number_of_zeros)
-        {
-            write(1, "0", 1);
-            i++;
-        }
-        ft_putnbr(x);
+        write(1, "0", 1);
+        i++;
     }
+    ft_putnbr(x);
+    i = 0; 
+    while (i != number_of_spaces)
+    {
+        write(1, " ", 1);
+        i++;
+    }   
 }
 
-void ft_printf_d(int x, int number_of_zeros, int number_of_spaces, int flags) //ситуация когда флаг один 
+void ft_printf_d_help_main(int x, int number_of_zeros, int number_of_spaces, int flags)
+{
+    int i;
+
+    i = 0;
+    while (i != number_of_spaces)
+    {
+        write(1, " ", 1);
+        i++;
+    }
+    i = 0;
+    if (x > 0 && flags == 5)
+        write(1, "+", 1);
+    else if (x < 0)
+    {
+        write(1, "-", 1);
+        x *= -1;
+    }
+    while (i != number_of_zeros)
+    {
+        write(1, "0", 1);
+        i++;
+    }
+    ft_putnbr(x);
+}
+
+void ft_printf_d_help(int x, int number_of_zeros, int number_of_spaces, int flags)
+{
+    if (flags == 3)
+       ft_printf_d_help_3(x, number_of_zeros, number_of_spaces);
+    else 
+       ft_printf_d_help_main(x, number_of_zeros, number_of_spaces, flags);
+}
+
+void ft_printf_d_1(int x, int number_of_zeros, int number_of_spaces, int flags) //ситуация когда флаг один 
 {
     if (flags == 2 && number_of_zeros == 0 && number_of_spaces > 0) 
     {
         number_of_zeros = number_of_spaces;
         number_of_spaces = 0;
     }
-    //флаг 3 можно учитывать при печате если флаг равен 3 и есть ширина то печатаем ирину справа
     else if (flags == 4 && x >= 0 && number_of_spaces == 0)
         number_of_spaces = 1;
     else if (flags == 5 && x >= 0 && number_of_spaces > 0)
         number_of_spaces -= 1;
     ft_printf_d_help(x, number_of_zeros, number_of_spaces, flags);
-
 }
 
+void ft_printf_d_2_minus(int x, int number_of_zeros, int number_of_spaces, int flags)
+{
+    int i;
 
-void ft_d(int x, int len, char *str)
+    i = 0;
+    if (flags == 35 || flags == 53)
+        write(1, "+", 1);
+    else if (flags == 34 || flags == 43)
+        write(1, " ", 1); 
+    while (i != number_of_zeros)
+    {
+        write(1, "0", 1);
+        i++;
+    }
+    ft_putnbr(x);
+    i = 0; 
+    while (i != number_of_spaces)
+    {
+        write(1, " ", 1);
+        i++;
+    }   
+}
+
+void ft_printf_d_help_2(unsigned int x, int number_of_zeros, int number_of_spaces, int flags)
+{
+    int i;
+
+    i = 0;
+    if (flags == 35 || flags == 53 || flags == 34 || flags == 43)
+    {
+       ft_printf_d_2_minus(x, number_of_zeros, number_of_spaces, flags);
+       return ;
+    }
+    while (i != number_of_spaces)
+    {
+        write(1, " ", 1);
+        i++;
+    }
+    i = 0;
+    if (flags == 25 || flags == 52)
+        write(1, "+", 1);
+    while (i != number_of_zeros)
+    {
+        write(1, "0", 1);
+        i++;
+    }
+    ft_putnbr(x);
+}
+
+void ft_printf_d_2(int x, int number_of_zeros, int number_of_spaces, int flags)
+{
+    if ((flags == 25 || flags == 52) && number_of_spaces > 0)
+    {
+        if (x >= 0)
+        {
+            number_of_spaces -= 1;
+            if (number_of_zeros == 0 && number_of_spaces > 0)
+            {
+               number_of_zeros = number_of_spaces;
+               number_of_spaces = 0; 
+            }
+        }
+        else
+        { 
+            ft_printf_d_1(x, number_of_zeros, number_of_spaces, 2);
+            return ;
+        }
+    }
+    else if (flags == 35 || flags == 53)
+    {
+        if (x >= 0 && number_of_spaces > 0) // в функции печати просто перед всем печатаем плюс
+            number_of_spaces -= 1;
+        else if (x < 0)
+        {
+           ft_printf_d_1(x, number_of_zeros, number_of_spaces, 3);
+           return ;
+        }
+    }
+    else if ( flags == 34 || flags == 43)
+    {
+        if (x >= 0 && number_of_spaces > 0) //в функции печати просто перед всем печатаем пробел также как с плюсом, а ширину отправляем вправо
+           number_of_spaces -= 1;
+        else if (x < 0)
+        {
+            ft_printf_d_1(x, number_of_zeros, number_of_spaces, 3);
+            return ;
+        }
+    }
+    ft_printf_d_help_2(x, number_of_zeros, number_of_spaces, flags);
+}
+
+void ft_d(int x, int len, char *str) //для x можно сделать тип long long int чтобы любые числа могли уместиться 
 {
     int number_of_zeros;
     int number_of_spaces;
@@ -282,8 +380,10 @@ void ft_d(int x, int len, char *str)
     number_of_zeros = ft_precision(str, x);
     flags = ft_flags(&str[1]);
     number_of_spaces = ft_width(&str[1], flags, x, number_of_zeros);
-    ft_printf_d(x, number_of_zeros, number_of_spaces, flags); //функция с оодним флагом, нужно создать функцию с двумя флагами
-
+    if (flags >= 0 && flags <= 5)
+        ft_printf_d_1(x, number_of_zeros, number_of_spaces, flags); //функция с оодним флагом, нужно создать функцию с двумя флагами
+    else
+       ft_printf_d_2(x, number_of_zeros, number_of_spaces, flags);     
     //printf(" number_of_zeros - %d\n", number_of_zeros);              //для реализации точности можно сделать поиск в str точки, если точка есть то берем число после точки
     //printf(" number_of_spaces - %d\n", number_of_spaces); 
 //    printf("size - %ld\n", sizeof(x));   // реализуем точность с помощью поиска в нашей строке . и запищем местоположение точки в нашей стрчке после будем работать с тем что до этого местоположения те там должны стять ширина или флаг
@@ -410,8 +510,8 @@ int ft_printf(const char * restrict format, ...) //убрать ft_
 
 int main()
 {
-    ft_printf("%0121d" , -5);
+    ft_printf("%0+100.20d" , 5);
     printf("\n");
-    printf("%0121d\n" , -5); 
+    printf("%0+100.20d\n" , 5); 
     return (0);
 }
