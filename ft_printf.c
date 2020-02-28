@@ -12,7 +12,7 @@
 #include <stdarg.h>
 #include <unistd.h>
 #include <stdio.h>
-#include "printf_project/libft/libft.h"
+#include "libft/libft.h"
 
 char	*ft_itoa_base(int value, int base);
 char            *ft_itoa_long(long long int n);
@@ -322,18 +322,88 @@ void ft_printf_d_2(char *x, int number_of_zeros, int number_of_spaces, int flags
     ft_printf_d_help_2(x, number_of_zeros, number_of_spaces, flags);
 }
 
+void ft_print_0_or_0x(char x)
+{
+    if (x == 'o')
+        write(1, "0", 1);
+    else if (x == 'x')
+        write(1, "0x", 2);
+    else
+       write(1, "0X", 2); 
+    
+}
+
+void ft_printf_o_or_x(char *x, int flags, int number_of_zeros, int number_of_spaces)
+{
+    int i;
+
+    i = 0;
+    if (flags != 13 && flags != 31)
+    {
+        while (i++ != number_of_spaces)
+            write(1, " ", 1);
+        ft_print_0_or_0x(x[ft_strlen(x) - 1]);
+        i = 0;
+        while (i++ != number_of_zeros)
+            write(1, "0", 1);
+        ft_putstr(x);
+    }
+    else
+    {
+        ft_print_0_or_0x(x[ft_strlen(x) - 1]);
+        while (i++ != number_of_zeros)
+            write(1, "0", 1);
+        ft_putstr(x);
+        i = 0;
+        while (i++ != number_of_spaces)
+            write(1, " ", 1);
+    }
+}
+void ft_o_or_x(char *x, int flags, int *number_of_zeros, int *number_of_spaces)
+{
+    if (*number_of_spaces > 0)
+    {
+        if (x[ft_strlen(x) - 1] == 'o')
+            *number_of_spaces -= 1;
+        else if ((x[ft_strlen(x) - 1] == 'x' || x[ft_strlen(x) - 1] == 'X') 
+            && (*number_of_spaces > 0))
+        {
+            if (*number_of_spaces > 2)
+                *number_of_spaces -= 2;
+            else
+                *number_of_spaces = 0;
+        }
+    }
+    if ((flags == 12 || flags == 21) && *number_of_spaces > 0 && *number_of_zeros == 0)
+    {
+        *number_of_zeros += *number_of_spaces;
+        *number_of_spaces = 0;
+    }
+//    ft_printf_o_or_x(x, flags, number_of_zeros, number_of_spaces);
+}
+
 void ft_d_or_i(char *x, char *str) //для x можно сделать тип long long int чтобы любые числа могли уместиться 
 {
     int number_of_zeros;
     int number_of_spaces;
     int flags; //1 - # 2 -0 3 - '-' 4 - ' ' 5 - '+'
+    int lst;
 
+    lst = ft_strlen(str) - 1;
     number_of_zeros = ft_precision(str, x);
     flags = ft_flags(&str[1]);
+    if (str[lst] == 's')
+        number_of_zeros = 0;
     number_of_spaces = ft_width(&str[1], flags, x, number_of_zeros);
-    if (flags >= 0 && flags <= 5)
+    if ((str[lst] == 'o' || str[lst] == 'x' || str[lst] == 'X') && (flags == 1 || flags == 13 
+    || flags == 31 || flags == 12 || flags == 21))
+    {
+            ft_o_or_x(str, flags, &number_of_zeros, &number_of_spaces);
+            ft_printf_o_or_x(x, flags, number_of_zeros, number_of_spaces);
+    }
+    else if ((flags > 1 && flags <= 5) || flags == 0)
         ft_printf_d_1(x, number_of_zeros, number_of_spaces, flags); //функция с оодним флагом, нужно создать функцию с двумя флагами
-    else
+    else if (flags > 10 && flags != 13 && flags != 31 && flags != 12 && flags != 21)
        ft_printf_d_2(x, number_of_zeros, number_of_spaces, flags);     
 }
 
@@ -369,19 +439,6 @@ char *ft_str_to_lower(char *str)
     }
     return (str);
 }
-void ft_oux(char *x, char *str, char type)
-{
-    int flags; //1 - # 2 -0 3 - '-' 4 - ' ' 5 - '+'
-
-    flags = ft_flags(&str[1]);
-    if ((type == 'o') && (flags == 1 || flags == 13 || flags == 31 
-        || flags == 12 || flags == 21))
-        x = ft_strjoin("0", x);
-    else if ((type == 'x' || type == 'X') && (flags == 1 || flags == 13 || flags == 31 
-        || flags == 12 || flags == 21))
-        x = ft_strjoin("0x", x);
-    ft_d_or_i(x, str);        
-}
 
 void ft_create_str(unsigned long long int x, char c, char *str)
 {
@@ -398,7 +455,7 @@ void ft_create_str(unsigned long long int x, char c, char *str)
     }
     else if (c == 'X')
         s = ft_itoa_base(x, 16);
-    ft_oux(s, str, c);
+    ft_d_or_i(s, str);
 }
 void ft_formatting_unsigned(int length, char *str, va_list ap, char c) 
 {                   
@@ -409,13 +466,12 @@ void ft_formatting_unsigned(int length, char *str, va_list ap, char c)
     else if (length == 2) //h
        ft_create_str((unsigned short)va_arg(ap, int), c, str);
     else if (length == 3) //ll:w
-
-       ft_create_str(va_arg(ap, unsigned long long int), c, str);  //сделать итоа для long long
+        ft_create_str(va_arg(ap, unsigned long long int), c, str);  //сделать итоа для long long
     else if (length == 4) //l
        ft_create_str(va_arg(ap, unsigned long int), c, str);
 }
 
-void ft_int(const char * format, char *str, va_list ap, char c) // можно сделать функцию поиска str в общем предложении и заменить ее на то, что получится от преобразования и вернуть строчку 
+void ft_int(char *str, va_list ap, char c) // можно сделать функцию поиска str в общем предложении и заменить ее на то, что получится от преобразования и вернуть строчку 
 {
     int x;
     int length;
@@ -429,6 +485,53 @@ void ft_int(const char * format, char *str, va_list ap, char c) // можно с
         ft_formatting_unsigned(length, str, ap, c); 
 }
 
+char * ft_format_s(char *str, char *x)
+{
+    char *s;
+    int precision;
+    int len;
+    char *str2;
+   
+    len = ft_strlen(x);
+    if ((s = ft_strchr(str, '.')) != NULL)
+    {
+        precision = ft_atoi(&str[s - str + 1]);
+        if (len > precision)
+        {
+            len = 0;
+            str2 = ft_strnew(precision + 1);
+            while (len != precision)
+            {
+                str2[len] = x[len];
+                len++;
+            }
+            str2[len] = '\0';
+            return (str2);
+        }
+    }
+    return (x);
+}
+
+void ft_char(char *str, va_list ap, char c)
+{
+    char x;
+    char *s;
+
+    if (c == 'c')   
+    { 
+        x = (char)va_arg(ap, int);
+        s = ft_strnew(2);
+        s[0] = x;
+    }
+    else
+    {
+        s = ft_format_s(str, va_arg(ap, char *));
+        //printf("%s", s);
+    }
+    ft_d_or_i(s, str);
+//    ft_strdel(&s);
+}
+
 void ft_main(const char * format, int start, int finish, va_list ap) //изменить то, что возвращает функция
 {
     char *str;
@@ -437,11 +540,11 @@ void ft_main(const char * format, int start, int finish, va_list ap) //изме�
     str = ft_strsub(format, (unsigned int)start, finish - start + 1); //можно перенести в другую функиц
     c = format[finish];
     if (c == 'd' || c == 'i' || c == 'o' || c == 'u' || c == 'x' || c == 'X')
-        ft_int(format, str, ap, c);
+        ft_int(str, ap, c);
+    else if (c == 'c' || c == 's')
+        ft_char(str, ap, c);
     /*else if (c == 'f')
         ft_double(format, str, ap);
-    else if (c == 'c')
-        ft_char(format, str, ap);
     else if (c == 's')
         ft_str(format, str, ap)
     else if (c == 'p')
@@ -492,9 +595,10 @@ int main()
 {
     long long  x = 100000000000;
     int y = 0xFF;
+    char *c = "hello rgger rf g";
     
-    ft_printf("%#100.20X" , y);
+    ft_printf("%-12.5s" , c);
     printf("\n");
-    printf("%#100.20X\n" , y); 
+    printf("%-12.5s\n" , c); 
     return (0);
 }
